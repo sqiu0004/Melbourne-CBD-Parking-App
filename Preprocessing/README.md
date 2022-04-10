@@ -1,6 +1,6 @@
 # Parking Space Data Preprocessing
 ## The data
-### Columns: BayId, ArrivalTime, DepartureTime, DurationMinutes
+### Columns
 - BayId: id of parking bay
 - ArrivalTime: time a vehicle arrives at the parking bay
 - DepartureTime: time the vehicle departs the parking bay
