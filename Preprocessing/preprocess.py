@@ -22,7 +22,7 @@ def Main():
     data = input("Enter data source name: ")
 
     if not CheckIfTableExists(SQLCursor, data):
-        create_confirm = input("Table does not exist. Create table? (y/n) ")
+        create_confirm = input("Table does not exist. Create table? (y/n): ")
         if create_confirm == "y":
             SQLCursor.execute("CREATE TABLE " + data + " (BayId varchar(32), ArrivalTime varchar(32), DepartureTime varchar(32), DurationMinutes varchar(32))")
             print("Created table: ", data)
@@ -38,11 +38,10 @@ def Main():
                 print("i: ", i)
                 batch.append([row[0],row[1],row[2],row[3]])
                 if i % 1000000 == 0:
-                    # PopulateTableBatch(SQLCursor, SQLConnection, batch, data)
+                    PopulateTableBatch(SQLCursor, SQLConnection, batch, data)
                     batch.clear()
             if len(batch) > 0:
                 PopulateTableBatch(SQLCursor, SQLConnection, batch, data)
-                # break
 
     SQLCursor.execute(f"select * from {data}")
     pe_table = SQLCursor.fetchall()
@@ -50,13 +49,6 @@ def Main():
         print("First entry: ", row)
         break
     print("Database length", len(pe_table))
-
-    # if CheckIfDatabaseExists(SQLCursor, DatabaseName):
-    #     DeleteDatabase(SQLCursor, DatabaseName)
-
-    SQLCursor.execute("show databases")
-    Databases = SQLCursor.fetchall()
-    print(f"Databases after deletion: {Databases}")
 
 
 def PopulateTableBatch(Cursor, Connection, batch, data):

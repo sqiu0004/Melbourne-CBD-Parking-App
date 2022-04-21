@@ -11,34 +11,36 @@ def Main():
     SQLConnection = pymysql.connect(host=Endpoint, user=UserName, password=Password)
     SQLCursor = SQLConnection.cursor()
 
-    while True:
-        if CheckIfDatabaseExists(SQLCursor, DatabaseName):
-            break
-        else:
-            print("Database not yet created...")
-            SQLConnection.commit()
-            time.sleep(1)
+    try:
+        if not CheckIfDatabaseExists(SQLCursor, DatabaseName):
+            raise Exception("Database not yet created.")
 
-    SelectDatabase(SQLCursor, DatabaseName)
-    ShowTables(SQLCursor)
-    table = input("\nChoose table: ")
+        SelectDatabase(SQLCursor, DatabaseName)
 
-    while True:
-        if CheckIfTableExists(SQLCursor, table):
-            break
-        else:
-            print("Table not yet created...")
-            SQLConnection.commit()
-            time.sleep(1)
+        while True:
+            ShowTables(SQLCursor)
+            table = input("\nChoose table: ")
+            if not CheckIfTableExists(SQLCursor, table):
+                print("Table does not exist! ")
+                continue
 
-    print("\n1. Rename table \n2. Table info")
-    user_command = input("What would you like to do? ")
-    if user_command == "1":
-        RenameTable(SQLCursor, SQLConnection, table)
-        ShowTables(SQLCursor)
-    elif user_command == "2":
-        print("Loading table info...")
-        TableInfo(SQLCursor, table)
+            while True:
+                print("\n1. Rename table \n2. Table info \n3. Delete table \n4. Choose another table")
+                user_command = input("What would you like to do? ")
+                if user_command == "1":
+                    RenameTable(SQLCursor, SQLConnection, table)
+                    ShowTables(SQLCursor)
+                elif user_command == "2":
+                    print("Loading table info...")
+                    TableInfo(SQLCursor, table)
+                elif user_command == "3":
+                    DeleteTable(SQLCursor, SQLConnection)
+                    break
+                elif user_command == "4":
+                    break
+
+    except Exception as error:
+        print(error)
 
 
 def CheckIfTableExists(Cursor, Name):
@@ -83,8 +85,6 @@ def ShowTables(Cursor):
 def TableInfo(Cursor, table):
     Cursor.execute(f"select * from {table}")
     fetch = Cursor.fetchall()
-    print("Table length: ", len(fetch))
-
     i = 0
     for row in fetch:
         i = i + 1
@@ -93,6 +93,8 @@ def TableInfo(Cursor, table):
         elif i == 2:
             print("Second row: ", row)
             break
+
+    print("Table length: ", len(fetch))
 
 
 def RenameTable(Cursor, Connection, table):
@@ -104,7 +106,14 @@ def RenameTable(Cursor, Connection, table):
         else:
             Cursor.execute("ALTER TABLE " + table + " RENAME TO " + new_name)
             Connection.commit()
+            break
 
+
+def DeleteTable(Cursor, Connection, delete_table):
+    confirm = input("Are you sure? (y/n): ")
+    if confirm == "y":
+        Cursor.execute("DROP TABLE IF EXISTS " + delete_table)
+        Connection.commit()
 
 if __name__ == '__main__':
     Main()
