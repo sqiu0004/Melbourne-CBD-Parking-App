@@ -1,5 +1,10 @@
 import csv
 
+BayId = None
+ArrivalTime = None
+DepartureTime = None
+DurationMinutes = None
+
 def Main():
     data = input("Data csv name (no extension): ")
 
@@ -11,14 +16,19 @@ def Main():
         j = 0
         for row in csv.reader(inp):
             j = j + 1
+            if j == 1:
+                BayId = row.index('BayId')
+                ArrivalTime = row.index('ArrivalTime')
+                DepartureTime = row.index('DepartureTime')
+                DurationMinutes = row.index('DurationMinutes')
             if row[-1] != "false":
                 i = i + 1
                 print("i: ", i, "   j: ", j)
 
-                writer.writerow({'BayId': row[17],
-                                 'ArrivalTime': row[1],
-                                 'DepartureTime': row[2],
-                                 'DurationMinutes': row[3]})
+                writer.writerow({'BayId': row[BayId],
+                                 'ArrivalTime': row[ArrivalTime],
+                                 'DepartureTime': row[DepartureTime],
+                                 'DurationMinutes': row[DurationMinutes]})
                 # if i == 10: break
 
 if __name__ == '__main__':
