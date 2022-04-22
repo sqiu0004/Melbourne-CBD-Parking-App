@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+<style>
+  #map {
+    position:fixed;
+    width:100%;
+    top:100px;
+    left:0px;
+    bottom:0;
+    z-index:1;
+}
+  .slidecontainer {
+  width: 100%;
+}
+.menu{
+  z-index: 10;
+}
+.slider {
+  -webkit-appearance: none;  /* Override default CSS styles */
+  appearance: none;
+  width: 50%; /* Full-width */
+  height: 25px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: none; /* Remove outline */
+  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
+}
+
+  </style>
+
+    <meta charset="utf-8">
+    <title>Melbourne Car parks</title>
+  </head>
+  <body>
+
+     <div class="menu">
+       <div class="buttons">
+         <button id="button-0" class="pressed" onclick="upDateButtons(0)">Weekly 2018</button>
+         <button id="button-1" class="but" onclick="upDateButtons(1)">Test</button>
+         <button id="button-2" class="but" onclick="upDateButtons(2)">View Real Time</button>
+         </div>
+         <div id="inputs">
+              <div class='slidecontainer'>
+                <input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'>
+                <p><span id='time'></span><p>
+              </div>
+           </div>
+    </div>
+     <div id="map"></div>
+  </body>
+
+  <script>
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic3VuZGFnIiwiYSI6ImNsMHgzdWh5NTFuYjUzbG9wZTNiemVid3YifQ.DX_2jXr9gd7qiU5HVS9PdQ';
+  const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v11',
+  center: [144.95616013663155,-37.80885560879349],
+  zoom: 17
+  });
+
+  let bayid=[];
+  let currentCarParks=[];
+  //changeSlider();
+  map.on('load', function(){
+    map.addSource('predictionUsingCurrent',{
+      'type':'geojson',
+      'data':'https://mdeen99.github.io/weekly2018.geojson'
+    })
+    map.addLayer({
+      'id':'usingCurrent',
+      'type':'fill',
+      'source':'predictionUsingCurrent',
+      'paint': {'fill-color': 'blue'}
+      });
+  })
+
+
+  function changeSlider(){//updates the slider value for using predicitons based on live data
+    timeToPredict=document.getElementById("myRange").value;
+    //timeToPredict=10*timeToPredict;
+    document.getElementById("time").innerHTML="Day: "+Math.floor(1+timeToPredict/24)+", hour: "+(timeToPredict%24);
+    updateLayer1('usingCurrent', parseInt(timeToPredict));
+  }
+  function upDateButtons(button){
+    if(document.getElementById("button-"+button).className=="but"){
+      document.getElementsByClassName("pressed")[0].className="but";
+      document.getElementById("button-"+button).className="pressed";
+      if(button==2){
+        //sonething
+      }
+      else if(button==0){
+        document.getElementById("inputs").innerHTML= "<div class='slidecontainer'><input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'><p><span id='time'></span> in the future<p></div>"
+        removeLayers(currentCarParks,[]);
+        currentCarParks=[];
+        map.addLayer({
+          'id':'usingCurrent',
+          'type':'fill',
+          'source':'predictionUsingCurrent',
+          'paint': {'fill-color': 'blue'}
+          });
+          map.off('moveend',getData);
+      }
+      else if (button==1) {
+        document.getElementById("inputs").innerHTML="<div class='datInputs'><input type='date' onChange='dateChanged()'></input><input type='time' onChange='dateChanged()></input></div>";
+        map.removeLayer('usingCurrent');
+        getData();
+        map.on('moveend',getData);
+      }
+
+    }
+  }
+
+  async function getData() {
+    const response = await fetch('https://data.melbourne.vic.gov.au/resource/wuf8-susg.json?$where=within_box(the_geom,'+map.getBounds()['_ne'].lat+','+map.getBounds()['_sw'].lng+','+map.getBounds()['_sw'].lat+','+map.getBounds()['_ne'].lng+')');
+    const data = await response.json();
+    bayid=[];
+    for(var i=0;i<data.length;i++){
+      bayid[i]=data[i].bay_id;
+    }
+    var union=bayid.filter(x=>currentCarParks.includes(x));
+    for (var i=0;i<bayid.length;i++){
+      if (union.indexOf(bayid[i])==-1){
+        map.addSource(bayid[i],{
+          'type':"geojson",
+          'data':{
+            'type':'Feature',
+            'geometry':{'type':'Polygon',
+            'coordinates':[[data[i].the_geom.coordinates[0][0][0],data[i].the_geom.coordinates[0][0][1],data[i].the_geom.coordinates[0][0][2],data[i].the_geom.coordinates[0][0][3],data[i].the_geom.coordinates[0][0][4]]]
+          }}
+        });
+        map.addLayer({
+          'id':bayid[i],
+          'type':'fill',
+          'source':bayid[i],
+          'paint': {
+            'fill-color': getRandomColor(), // blue color fill
+          }
+        });
+      }
+    }
+    removeLayers(currentCarParks, union);
+      currentCarParks=bayid;
+  }
+  function removeLayers(arr, unionArr){
+    for(var j=0;j<arr.length;j++){
+      if (unionArr.indexOf(arr[j])==-1){
+        map.removeLayer(arr[j].toString());
+        map.removeSource(arr[j]);
+      }
+    }
+  }
+  function dateChanged(){
+    for(var i=0;i<currentCarParks.length;i++){
+      updateLayer(currentCarParks[i]);
+    }
+  }
+  function updateLayer(layer){
+      map.setPaintProperty(layer, 'fill-color', getRandomColor());
+  }
+  function updateLayer1(layer,time){
+    map.setPaintProperty(layer, 'fill-color', ["to-color", ["concat",
+                        "hsl(", ["to-string",
+                            ["-", 100,  ["at", time, ["get", "prob"]]]],
+                        ",100%, 50%)"]]);
+  }
+  function getRandomColor() {//copy pasted from stackoverflow
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  }
+  </script>
+</html>
