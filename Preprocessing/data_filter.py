@@ -1,12 +1,13 @@
 import csv
 
-BayId = None
-ArrivalTime = None
-DepartureTime = None
-DurationMinutes = None
-
 def Main():
+    BayId = None
+    ArrivalTime = None
+    DepartureTime = None
+    DurationMinutes = None
+    Largest_BayId = 0
     data = input("Data csv name (no extension): ")
+    # D:\Desktop\Academia\TRC4200\data\data2018
 
     with open(data + '.csv', 'r') as inp, open(data + '_filtered.csv', 'w', newline='') as out:
         fieldnames = ['BayId', 'ArrivalTime', 'DepartureTime', 'DurationMinutes']
@@ -17,6 +18,7 @@ def Main():
         for row in csv.reader(inp):
             j = j + 1
             if j == 1:
+                print(row)
                 BayId = row.index('BayId')
                 ArrivalTime = row.index('ArrivalTime')
                 DepartureTime = row.index('DepartureTime')
@@ -29,7 +31,6 @@ def Main():
                                  'ArrivalTime': row[ArrivalTime],
                                  'DepartureTime': row[DepartureTime],
                                  'DurationMinutes': row[DurationMinutes]})
-                # if i == 10: break
 
 if __name__ == '__main__':
     Main()
@@ -38,11 +39,11 @@ if __name__ == '__main__':
 # 1: ArrivalTime
 # 2: DepartureTime
 # 3: DurationMinutes
-# 4: StreetMarker
+# 4: BayId
 # 5: SignPlateID
 # 6: Sign
 # 7: AreaName
-# 8: StreetId
+# 8: BayId
 # 9: StreetName
 # 10: BetweenStreet1ID
 # 11: BetweenStreet1
