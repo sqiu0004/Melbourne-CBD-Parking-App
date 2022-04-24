@@ -7,7 +7,7 @@
   #map {
     position:fixed;
     width:100%;
-    top:100px;
+    top:140px;
     left:0px;
     bottom:0;
     z-index:1;
@@ -19,7 +19,6 @@
   z-index: 10;
 }
 .slider {
-  -webkit-appearance: none;  /* Override default CSS styles */
   appearance: none;
   width: 50%; /* Full-width */
   height: 25px; /* Specified height */
@@ -28,6 +27,11 @@
   opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
   -webkit-transition: .2s; /* 0.2 seconds transition on hover */
   transition: opacity .2s;
+}
+.gradientContainer{
+  background:linear-gradient(to right, hsl(120,100%,50%) 0%,  hsl(180,100%,50%) 25%, hsl(240,100%,50%) 50%,  hsl(300,100%,50%) 75%,hsl(360,100%,50%) 100%);
+  width:50%;
+  height:10px;
 }
 
   </style>
@@ -46,9 +50,12 @@
          <div id="inputs">
               <div class='slidecontainer'>
                 <input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'>
-                <p><span id='time'></span><p>
+                <p><span id='time'>Day:1, hour: 2</span><p>
               </div>
            </div>
+           <div id='box'>
+             <div class='gradientContainer'></div>
+         </div>
     </div>
      <div id="map"></div>
   </body>
@@ -57,7 +64,7 @@
   mapboxgl.accessToken = 'pk.eyJ1Ijoic3VuZGFnIiwiYSI6ImNsMHgzdWh5NTFuYjUzbG9wZTNiemVid3YifQ.DX_2jXr9gd7qiU5HVS9PdQ';
   const map = new mapboxgl.Map({
   container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v11',
+  style: 'mapbox://styles/mapbox/dark-v10',
   center: [144.95616013663155,-37.80885560879349],
   zoom: 17
   });
@@ -74,7 +81,10 @@
       'id':'usingCurrent',
       'type':'fill',
       'source':'predictionUsingCurrent',
-      'paint': {'fill-color': 'blue'}
+      'paint': {'fill-color': ["to-color", ["concat",
+                          "hsl(", ["to-string",
+                              ["+", 120, ["*",2.4, ["at", 2, ["get", "prob"]]]]],
+                          ",100%, 50%)"]]}
       });
   })
 
@@ -100,7 +110,10 @@
           'id':'usingCurrent',
           'type':'fill',
           'source':'predictionUsingCurrent',
-          'paint': {'fill-color': 'blue'}
+          'paint': {'fill-color': ["to-color", ["concat",
+                              "hsl(", ["to-string",
+                                  ["+", 120, ["*",2.4, ["at", 2, ["get", "prob"]]]]],
+                              ",100%, 50%)"]]}
           });
           map.off('moveend',getData);
       }
@@ -164,7 +177,7 @@
   function updateLayer1(layer,time){
     map.setPaintProperty(layer, 'fill-color', ["to-color", ["concat",
                         "hsl(", ["to-string",
-                            ["-", 100,  ["at", time, ["get", "prob"]]]],
+                            ["+", 120, ["*",2.4, ["at", time, ["get", "prob"]]]]],
                         ",100%, 50%)"]]);
   }
   function getRandomColor() {//copy pasted from stackoverflow
