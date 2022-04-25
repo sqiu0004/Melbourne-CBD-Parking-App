@@ -23,7 +23,7 @@ def Main():
                 ArrivalTime = row.index('ArrivalTime')
                 DepartureTime = row.index('DepartureTime')
                 DurationMinutes = row.index('DurationMinutes')
-            if row[-1] != "false":
+            if (row[-1] != "false") and (row[-1] != "0"):
                 i = i + 1
                 print("i: ", i, "   j: ", j)
 
