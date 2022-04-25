@@ -1,11 +1,10 @@
 import csv
 import datetime
 import numpy as np
-import pandas as pd
 
 
 # Initialise table
-id_list = range(0,25000)
+id_list = range(0,10000)
 DiW = 7  # Days in week
 HiD = 24  # Hours in day
 n_hours = DiW*HiD
@@ -58,7 +57,21 @@ def Main():
 
     elif option == "1":
         data = input("Data file: ")
-        # e.g. "data2018_filtered"
+        # e.g. "D:\Desktop\Academia\TRC4200\data_25042022\data2020_filtered"
+        monthly = False
+        month = False
+
+        while True:
+            monthly = input("Monthly prediction? (y/n):")
+            if monthly == "y":
+                monthly = True
+                month = input("Enter month (1-12): ")
+                break
+            elif monthly == "n":
+                monthly = False
+                break
+            else:
+                print("Answer must be (y/n)!")
 
         with open(data + '.csv', 'r') as in_file, open("weekly_table.csv", "w", newline='') as out_file:
             # Writer header
@@ -74,19 +87,23 @@ def Main():
             j = 0
 
             for row in reader:
-                j += 1
-                print(j)
-
                 # Row elements
                 id = row[0]
                 time_a = row[1]  # arrival time
                 time_d = row[2]  # departure time
+                m_span = row[3]  # time difference in minutes
 
-                # reformat the arrival and departure times in unix
+                # Reformat the arrival and departure times in unix
                 unix_a = datetime.datetime.strptime(time_a, format)
                 unix_d = datetime.datetime.strptime(time_d, format)
 
+                if monthly:
+                    if (int(unix_a.month) != int(month)) or (int(unix_d.month) != int(month)):
+                        continue
+
                 # find earliest and latest dates
+                # arrival time is used to compare b/c some departure dates are outliers
+                j += 1
                 if j == 1:
                     earliest_date = unix_a
                     latest_date = unix_a
@@ -95,27 +112,33 @@ def Main():
                     latest_date   = latest_date   if (latest_date   - unix_a).days > 0 else unix_a
 
                 # find the number of hours between the departure and arrival times
-                t_span = unix_d - unix_a
-                t_span_h = int(divmod(t_span.total_seconds(), 3600)[0]) + 1
+                h_span = (datetime.datetime.combine(unix_d.date(), datetime.time(unix_d.hour)) -
+                          datetime.datetime.combine(unix_a.date(), datetime.time(unix_a.hour)))
+                h_span = int(1 + h_span.total_seconds()/3600)
 
                 # convert the arrival time to table index (hours in a week)
-                DoW_a = pd.Timestamp(unix_a).dayofweek
+                DoW_a = unix_a.weekday()
                 hour_a = DoW_a*24 + unix_a.hour
+                print(j, ":   bay(", id, ")   arr(", unix_a, ")   dep(", unix_d, ")   h_span(", h_span, ")   DoW(", DoW_a, ")")
 
                 # increment times of occupancy
-                for hour in range(t_span_h):
-                    if t_span_h == 1:  # if event *only occupies one hour* take the difference between departure and arrival minutes
-                        weekly_table[(hour_a + hour) % n_hours, (int(id) + 2)] += round(unix_d.minute / 10) - round(unix_a.minute / 10)
-                    elif hour == 0:  # if event is over one hour, take the time occupied in the first hour using the arrival time
-                        weekly_table[(hour_a + hour) % n_hours, (int(id) + 2)] += 6 - round(unix_a.minute / 10)
-                    elif hour == t_span_h - 1: # if event is over one hour, take the time occupied in the last hour using the departure time
-                        weekly_table[(hour_a + hour) % n_hours, (int(id) + 2)] += round(unix_d.minute / 10)
-                    else: # if event is over one hour, assume all hours in between arrival and departure are occupied completely
-                        weekly_table[(hour_a + hour) % n_hours, (int(id) + 2)] += 6
+                if h_span == 1:  # if event *only occupies one hour* take the difference between departure and arrival minutes
+                    weekly_table[(hour_a) % n_hours, (int(id) + 2)] += round(unix_d.minute / 10) - round(unix_a.minute / 10)
+                else:
+                    for hour in range(h_span):
+                        if hour == 0:  # if event is over one hour, take the time occupied in the first hour using the arrival time
+                            weekly_table[(hour_a) % n_hours, (int(id) + 2)] += 6 - round(unix_a.minute / 10)
+                        elif hour == h_span - 1:  # if event is over one hour, take the time occupied in the last hour using the departure time
+                            weekly_table[(hour_a + hour) % n_hours, (int(id) + 2)] += round(unix_d.minute / 10)
+                        else:  # if event is over one hour, assume all hours in between arrival and departure are occupied completely
+                            weekly_table[(hour_a + hour) % n_hours, (int(id) + 2)] += 6
 
-            total_weeks = (latest_date - earliest_date).days/7
-            print("Total weeks: ", total_weeks)
-            weekly_table[:,2:] = np.clip(weekly_table[:,2:]*100.0/(total_weeks*6.0), 0.0, 100.0)  # calculate the percentage by dividing by 52*6 (number of weeks in a year * max number of increments in each element) and clipping the result between 0 and 100%
+                # if j == 10:
+                #     break
+
+            total_weeks = (latest_date - earliest_date).days/7.0
+            print("Earliest_date(", earliest_date, ")   Latest_date(", latest_date, ")   Total_weeks(", total_weeks, ")")
+            weekly_table[:,2:] = np.clip(weekly_table[:,2:]*100.0/(total_weeks*6.0), 0.0, 100.0)  # calculate the percentage
             writer.writerows(weekly_table)
 
 if __name__ == '__main__':
