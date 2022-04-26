@@ -33,6 +33,9 @@
   width:50%;
   height:10px;
 }
+.pressed{
+  background-color: #d6d3c9;
+}
 
   </style>
 
@@ -43,9 +46,9 @@
 
      <div class="menu">
        <div class="buttons">
-         <button id="button-0" class="pressed" onclick="upDateButtons(0)">Weekly 2018</button>
+         <button id="button-0" class="pressed" onclick="upDateButtons(0)">Weekly 2018-20</button>
+         <button id="button-3" class="but" onclick="upDateButtons(3)">Weekly 2018</button>
          <button id="button-1" class="but" onclick="upDateButtons(1)">Test</button>
-         <button id="button-2" class="but" onclick="upDateButtons(2)">View Real Time</button>
          </div>
          <div id="inputs">
               <div class='slidecontainer'>
@@ -71,11 +74,12 @@
 
   let bayid=[];
   let currentCarParks=[];
+  let time=0;
   //changeSlider();
   map.on('load', function(){
     map.addSource('predictionUsingCurrent',{
       'type':'geojson',
-      'data':'https://mdeen99.github.io/weekly2018.geojson'
+      'data':'https://mdeen99.github.io/weekly2018-20.geojson'
     })
     map.addLayer({
       'id':'usingCurrent',
@@ -93,33 +97,68 @@
     timeToPredict=document.getElementById("myRange").value;
     //timeToPredict=10*timeToPredict;
     document.getElementById("time").innerHTML="Day: "+Math.floor(1+timeToPredict/24)+", hour: "+(timeToPredict%24);
-    updateLayer1('usingCurrent', parseInt(timeToPredict));
+    time=parseInt(timeToPredict);
+    updateLayer1('usingCurrent', time);
   }
   function upDateButtons(button){
     if(document.getElementById("button-"+button).className=="but"){
+      old = document.getElementsByClassName("pressed")[0].id[7];
       document.getElementsByClassName("pressed")[0].className="but";
       document.getElementById("button-"+button).className="pressed";
       if(button==2){
         //sonething
       }
-      else if(button==0){
-        document.getElementById("inputs").innerHTML= "<div class='slidecontainer'><input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'><p><span id='time'></span> in the future<p></div>"
-        removeLayers(currentCarParks,[]);
-        currentCarParks=[];
-        map.addLayer({
-          'id':'usingCurrent',
-          'type':'fill',
-          'source':'predictionUsingCurrent',
-          'paint': {'fill-color': ["to-color", ["concat",
-                              "hsl(", ["to-string",
-                                  ["+", 120, ["*",2.4, ["at", 2, ["get", "prob"]]]]],
-                              ",100%, 50%)"]]}
-          });
+      else if(button==0 || button==3){
+        if(old==1){
+          document.getElementById("inputs").innerHTML= "<div class='slidecontainer'><input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'><p><span id='time'></span> in the future<p></div>"
+          time=2;
+          removeLayers(currentCarParks,[]);
+          currentCarParks=[];
           map.off('moveend',getData);
+        }
+        if(old==3||button==0){
+          if(old==3){
+            map.removeLayer('usingCurrent');
+            map.removeSource('predictionUsingCurrent');
+          }
+          map.addSource('predictionUsingCurrent',{
+            'type':'geojson',
+            'data':'https://mdeen99.github.io/weekly2018-20.geojson'
+          });
+          map.addLayer({
+            'id':'usingCurrent',
+            'type':'fill',
+            'source':'predictionUsingCurrent',
+            'paint': {'fill-color': ["to-color", ["concat",
+                                "hsl(", ["to-string",
+                                    ["+", 120, ["*",2.4, ["at", time, ["get", "prob"]]]]],
+                                ",100%, 50%)"]]}
+            })
+        }
+        else if (old==0||button==3) {
+          if(old==0){
+            map.removeLayer('usingCurrent');
+            map.removeSource('predictionUsingCurrent');
+          }
+          map.addSource('predictionUsingCurrent',{
+            'type':'geojson',
+            'data':'https://mdeen99.github.io/weekly2018.geojson'
+          });
+          map.addLayer({
+            'id':'usingCurrent',
+            'type':'fill',
+            'source':'predictionUsingCurrent',
+            'paint': {'fill-color': ["to-color", ["concat",
+                                "hsl(", ["to-string",
+                                    ["+", 120, ["*",2.4, ["at", time, ["get", "prob"]]]]],
+                                ",100%, 50%)"]]}
+            })
+        }
       }
       else if (button==1) {
         document.getElementById("inputs").innerHTML="<div class='datInputs'><input type='date' onChange='dateChanged()'></input><input type='time' onChange='dateChanged()></input></div>";
         map.removeLayer('usingCurrent');
+        map.removeSource('predictionUsingCurrent')
         getData();
         map.on('moveend',getData);
       }
