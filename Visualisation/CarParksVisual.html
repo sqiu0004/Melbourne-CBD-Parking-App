@@ -7,7 +7,7 @@
   #map {
     position:fixed;
     width:100%;
-    top:150px;
+    top:170px;
     left:0px;
     bottom:0;
     z-index:1;
@@ -39,6 +39,13 @@
 .dayPressed{
   background-color: #d6d3c9;
 }
+.box{
+  width: 50%;
+}
+spanRight{
+  position: relative;
+  right: 0px;
+}
 
   </style>
 
@@ -50,7 +57,7 @@
      <div class="menu">
        <div class="buttons">
          <button id="button-0" class="pressed" onclick="upDateButtons(0)">Weekly 2018-20</button>
-         <button id="button-3" class="but" onclick="upDateButtons(3)">Weekly 2018</button>
+         <button id="button-3" class="but" onclick="upDateButtons(3)">Weekly 2018 MArker ID</button>
          <button id="button-1" class="but" onclick="upDateButtons(1)">Test</button>
          </div>
          <div id="inputs">
@@ -66,8 +73,14 @@
                 <p><span id='time'>2am</span><p>
               </div>
            </div>
-           <div id='box'>
+           <div className='box'>
              <div class='gradientContainer'></div>
+             <p style="text-align:left;">
+               0%
+                <span style="float:right;">
+                  100%
+                </span>
+              </p>
          </div>
     </div>
      <div id="map"></div>
@@ -166,7 +179,7 @@
           }
           map.addSource('predictionUsingCurrent',{
             'type':'geojson',
-            'data':'https://mdeen99.github.io/weekly2018.geojson'
+            'data':'https://mdeen99.github.io/weekly2018markerID.geojson'
           });
           map.addLayer({
             'id':'usingCurrent',
