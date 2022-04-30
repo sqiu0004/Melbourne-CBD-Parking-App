@@ -4,13 +4,13 @@ def Main():
     BayId = None
     ArrivalTime = None
     DepartureTime = None
-    DurationMinutes = None
+    StreetMarker = None
     Largest_BayId = 0
     data = input("Data csv name (no extension): ")
     # D:\Desktop\Academia\TRC4200\data\data2018
 
-    with open(data + '.csv', 'r') as inp, open(data + '_filtered.csv', 'w', newline='') as out:
-        fieldnames = ['BayId', 'ArrivalTime', 'DepartureTime', 'DurationMinutes']
+    with open(data + '.csv', 'r') as inp, open('data_filtered.csv', 'w', newline='') as out:
+        fieldnames = ['BayId', 'ArrivalTime', 'DepartureTime', 'StreetMarker']
         writer = csv.DictWriter(out, fieldnames)
 
         i = 0
@@ -22,7 +22,7 @@ def Main():
                 BayId = row.index('BayId')
                 ArrivalTime = row.index('ArrivalTime')
                 DepartureTime = row.index('DepartureTime')
-                DurationMinutes = row.index('DurationMinutes')
+                StreetMarker = row.index('StreetMarker')
             if (row[-1] != "false") and (row[-1] != "0"):
                 i = i + 1
                 print("i: ", i, "   j: ", j)
@@ -30,7 +30,7 @@ def Main():
                 writer.writerow({'BayId': row[BayId],
                                  'ArrivalTime': row[ArrivalTime],
                                  'DepartureTime': row[DepartureTime],
-                                 'DurationMinutes': row[DurationMinutes]})
+                                 'StreetMarker': row[StreetMarker]})
 
 if __name__ == '__main__':
     Main()
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 # 0: DeviceId
 # 1: ArrivalTime
 # 2: DepartureTime
-# 3: DurationMinutes
+# 3: StreetMarker
 # 4: BayId
 # 5: SignPlateID
 # 6: Sign

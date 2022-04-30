@@ -21,7 +21,7 @@ def daterange(date1, date2):
 
 
 def Main():
-    header = [None]*(n_ids+2)
+    header = [None for i in range(n_hours+2)]
     header[:2] = ['Day', 'Hour']
     header[2:] = id_list
 
