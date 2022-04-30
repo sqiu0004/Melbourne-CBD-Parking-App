@@ -7,7 +7,7 @@
   #map {
     position:fixed;
     width:100%;
-    top:140px;
+    top:170px;
     left:0px;
     bottom:0;
     z-index:1;
@@ -36,6 +36,16 @@
 .pressed{
   background-color: #d6d3c9;
 }
+.dayPressed{
+  background-color: #d6d3c9;
+}
+.box{
+  width: 50%;
+}
+spanRight{
+  position: relative;
+  right: 0px;
+}
 
   </style>
 
@@ -47,17 +57,30 @@
      <div class="menu">
        <div class="buttons">
          <button id="button-0" class="pressed" onclick="upDateButtons(0)">Weekly 2018-20</button>
-         <button id="button-3" class="but" onclick="upDateButtons(3)">Weekly 2018</button>
+         <button id="button-3" class="but" onclick="upDateButtons(3)">Weekly 2018 MArker ID</button>
          <button id="button-1" class="but" onclick="upDateButtons(1)">Test</button>
          </div>
          <div id="inputs">
+           <button id='buttonDay-0' class='dayPressed' onclick='updateDayButtons(0)'>Mon</button>
+           <button id='buttonDay-1' class='dayBut' onclick='updateDayButtons(1)'>Tues</button>
+           <button id='buttonDay-2' class='dayBut' onclick='updateDayButtons(2)'>Weds</button>
+           <button id='buttonDay-3' class='dayBut' onclick='updateDayButtons(3)'>Thur</button>
+           <button id='buttonDay-4' class='dayBut' onclick='updateDayButtons(4)'>Fri</button>
+           <button id='buttonDay-5' class='dayBut' onclick='updateDayButtons(5)'>Sat</button>
+           <button id='buttonDay-6' class='dayBut' onclick='updateDayButtons(6)'>Sun</button>
               <div class='slidecontainer'>
-                <input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'>
-                <p><span id='time'>Day:1, hour: 2</span><p>
+                <input type='range' min='0' max='23' value='2' class='slider' id='myRange' oninput='changeSlider()'>
+                <p><span id='time'>2am</span><p>
               </div>
            </div>
-           <div id='box'>
+           <div className='box'>
              <div class='gradientContainer'></div>
+             <p style="text-align:left;">
+               0%
+                <span style="float:right;">
+                  100%
+                </span>
+              </p>
          </div>
     </div>
      <div id="map"></div>
@@ -94,10 +117,24 @@
 
 
   function changeSlider(){//updates the slider value for using predicitons based on live data
+
     timeToPredict=document.getElementById("myRange").value;
     //timeToPredict=10*timeToPredict;
-    document.getElementById("time").innerHTML="Day: "+Math.floor(1+timeToPredict/24)+", hour: "+(timeToPredict%24);
-    time=parseInt(timeToPredict);
+    time=parseInt(timeToPredict)+document.getElementsByClassName("dayPressed")[0].id[10]*24;
+    if(timeToPredict==0){
+      output="12am";
+    }
+    else if (timeToPredict==12) {
+      output="12pm"
+    }
+    else if (timeToPredict<12) {
+      output=timeToPredict+'am'
+    }
+    else{
+        output=timeToPredict%12+'pm'
+    }
+    document.getElementById("time").innerHTML=output;
+
     updateLayer1('usingCurrent', time);
   }
   function upDateButtons(button){
@@ -110,7 +147,7 @@
       }
       else if(button==0 || button==3){
         if(old==1){
-          document.getElementById("inputs").innerHTML= "<div class='slidecontainer'><input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'><p><span id='time'></span> in the future<p></div>"
+          document.getElementById("inputs").innerHTML= "<button id='buttonDay-0' class='dayPressed' onclick='updateDayButtons(0)'>Mon</button><button id='buttonDay-1' class='dayBut' onclick='updateDayButtons(1)'>Tues</button><button id='buttonDay-2' class='dayBut' onclick='updateDayButtons(2)'>Weds</button><button id='buttonDay-3' class='dayBut' onclick='updateDayButtons(3)'>Thur</button><button id='buttonDay-4' class='dayBut' onclick='updateDayButtons(4)'>Fri</button><button id='buttonDay-5' class='dayBut' onclick='updateDayButtons(5)'>Sat</button><button id='buttonDay-6' class='dayBut' onclick='updateDayButtons(6)'>Sun</button><div class='slidecontainer'><input type='range' min='0' max='167' value='2' class='slider' id='myRange' oninput='changeSlider()'><p><span id='time'></span> in the future<p></div>"
           time=2;
           removeLayers(currentCarParks,[]);
           currentCarParks=[];
@@ -142,7 +179,7 @@
           }
           map.addSource('predictionUsingCurrent',{
             'type':'geojson',
-            'data':'https://mdeen99.github.io/weekly2018.geojson'
+            'data':'https://mdeen99.github.io/weekly2018markerID.geojson'
           });
           map.addLayer({
             'id':'usingCurrent',
@@ -165,7 +202,15 @@
 
     }
   }
-
+  function updateDayButtons(button){
+    if(document.getElementById("buttonDay-"+button).className=="dayBut"){
+      old = document.getElementsByClassName("dayPressed")[0].id[10];
+      document.getElementsByClassName("dayPressed")[0].className="dayBut";
+      document.getElementById("buttonDay-"+button).className="dayPressed";
+      time=button*24+parseInt(document.getElementById("myRange").value);
+      updateLayer1('usingCurrent',time);
+    }
+  }
   async function getData() {
     const response = await fetch('https://data.melbourne.vic.gov.au/resource/wuf8-susg.json?$where=within_box(the_geom,'+map.getBounds()['_ne'].lat+','+map.getBounds()['_sw'].lng+','+map.getBounds()['_sw'].lat+','+map.getBounds()['_ne'].lng+')');
     const data = await response.json();
@@ -213,10 +258,10 @@
   function updateLayer(layer){
       map.setPaintProperty(layer, 'fill-color', getRandomColor());
   }
-  function updateLayer1(layer,time){
+  function updateLayer1(layer,atTime){
     map.setPaintProperty(layer, 'fill-color', ["to-color", ["concat",
                         "hsl(", ["to-string",
-                            ["+", 120, ["*",2.4, ["at", time, ["get", "prob"]]]]],
+                            ["+", 120, ["*",2.4, ["at", atTime, ["get", "prob"]]]]],
                         ",100%, 50%)"]]);
   }
   function getRandomColor() {//copy pasted from stackoverflow
