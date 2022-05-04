@@ -136,10 +136,6 @@ def Main():
                         else:  # if event is over one hour, assume all hours in between arrival and departure are occupied completely
                             weekly_table[(hour_a + hour) % n_hours, (int(id) + 3)] += 6
 
-                # if j == 10:
-                #     break
-
-            # print("Earliest_date(", earliest_date, ")   Latest_date(", latest_date, ")   Total_weeks(", total_weeks, ")")
             weekly_table[:,3:] = np.clip(weekly_table[:,3:]*100.0/(((365.25/12.0)/7.0)*6.0), 0.0, 100.0)  # calculate the percentage
             writer.writerows(weekly_table)
 
