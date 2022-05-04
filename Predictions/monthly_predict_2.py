@@ -32,7 +32,7 @@ def Main():
         table1 = input("table 1: ")
         table2 = input("Table 2: ")
 
-        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("weekly_table_combined.csv", "w", newline='') as out_file:
+        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("monthly_table_combined.csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
@@ -75,7 +75,7 @@ def Main():
             else:
                 print("Answer must be (y/n)!")
 
-        with open(data + '.csv', 'r') as in_file, open("weekly_table.csv", "w", newline='') as out_file:
+        with open(data + '.csv', 'r') as in_file, open("monthly_table.csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
@@ -139,7 +139,7 @@ def Main():
                 # if j == 10:
                 #     break
 
-            print("Earliest_date(", earliest_date, ")   Latest_date(", latest_date, ")   Total_weeks(", total_weeks, ")")
+            # print("Earliest_date(", earliest_date, ")   Latest_date(", latest_date, ")   Total_weeks(", total_weeks, ")")
             weekly_table[:,3:] = np.clip(weekly_table[:,3:]*100.0/(((365.25/12.0)/7.0)*6.0), 0.0, 100.0)  # calculate the percentage
             writer.writerows(weekly_table)
 
