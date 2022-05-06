@@ -30,10 +30,11 @@ def Main():
 
     option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
     if option == "2":
-        table1 = input("table 1: ")
-        table2 = input("Table 2: ")
+        table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\data20220506\baseline_table
+        table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\data20220506\monthly_table_2018-20
+        ratio = input("Ratio (0.0-1.0): ")
 
-        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("monthly_table_combined.csv", "w", newline='') as out_file:
+        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("monthly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
@@ -47,16 +48,15 @@ def Main():
             in_file2 = list(reader2)
             data1 = np.array(in_file1).astype(float)
             data2 = np.array(in_file2).astype(float)
-            data_avg = np.zeros(data1.shape)
 
-            for i in range(data_avg.shape[0]):
-                for counter in range(data_avg.shape[1]):
+            for i in range(weekly_table.shape[0]):
+                for counter in range(len(params), weekly_table.shape[1]):
                     if (data1[i, counter] < 1.0) or (data2[i, counter] < 1.0):
-                        data_avg[i, counter] = data1[i, counter] + data2[i, counter]
+                        weekly_table[i, counter] = data1[i, counter] + data2[i, counter]
                     else:
-                        data_avg[i, counter] = (data1[i, counter] + data2[i, counter]) / 2
+                        weekly_table[i, counter] = data1[i, counter]*(1.0 - float(ratio)) + data2[i, counter]*float(ratio)
 
-            writer.writerows(data_avg)
+            writer.writerows(weekly_table)
 
     elif option == "1":
         data = input("Data file: ")
