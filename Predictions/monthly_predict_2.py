@@ -4,7 +4,12 @@ import numpy as np
 
 
 # Initialise table
-id_list = range(0,10000)
+with open("D:/Desktop/Academia/TRC4200/results/id_table.csv", 'r') as id_file:
+    next(id_file)
+    id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
+    id_list = [row[1:] for row in id_reader]
+    id_list = id_list[0]
+# id_list = range(0,10000)
 params = ['Month', 'Day', 'Hour']  # parameters
 DiW = 7  # Days in week
 HiD = 24  # Hours in day
@@ -30,11 +35,11 @@ def Main():
 
     option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
     if option == "2":
-        table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\data20220506\baseline_table
-        table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\data20220506\monthly_table_2018-20
+        table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
+        table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20_MarkerId.csv
         ratio = input("Ratio (0.0-1.0): ")
 
-        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("monthly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
+        with open(table1, 'r') as in_file1, open(table2, 'r') as in_file2, open("monthly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)

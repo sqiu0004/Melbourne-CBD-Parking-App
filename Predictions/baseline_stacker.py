@@ -4,7 +4,12 @@ import numpy as np
 
 
 # Initialise table
-id_list = range(0,10000)
+with open("D:/Desktop/Academia/TRC4200/results/id_table.csv", 'r') as id_file:
+    next(id_file)
+    id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
+    id_list = [row[1:] for row in id_reader]
+    id_list = id_list[0]
+# id_list = range(0,10000)
 params = ['Month', 'Day', 'Hour']  # parameters
 DiW = 7  # Days in week
 HiD = 24  # Hours in day
@@ -29,7 +34,7 @@ def Main():
     header[len(params):] = id_list
 
     data = input("Data file: ")
-    # e.g. "D:\Desktop\TRC4200\data2018-20_filtered\data2020_filtered"
+    # e.g. "D:\Desktop\Academia\TRC4200\results\weekly_table_2018-2020_MarkerId.csv"
     monthly = False
     month = False
 
@@ -41,7 +46,7 @@ def Main():
         j = 0
         for month in range(MiY):
 
-            with open(data + '.csv', 'r') as in_file:
+            with open(data, 'r') as in_file:
                 # Read from filtered list
                 next(in_file)
                 reader = csv.reader(in_file)
