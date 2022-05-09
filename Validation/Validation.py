@@ -17,8 +17,11 @@ if cur.fetchone() is None:
     with open('On-street_Car_Parking_Sensor_Data_-_2017.csv', 'r') as fin:  # `with` statement available in 2.5+
         # csv.DictReader uses first line in file for column headings by default
         dr = csv.DictReader(fin)  # comma is default delimiter
-        to_db = [(i['StreetMarker'], datetime.strptime(i['ArrivalTime'], '%m/%d/%Y %I:%M:%S %p').timestamp(), datetime.strptime(i['DepartureTime'], '%m/%d/%Y %I:%M:%S %p').timestamp()) for i in dr]
-    cur.executemany("INSERT INTO t (MarkerId, ArrivalTime, DepartureTime) VALUES (?, ?,?);", to_db)
+        for row in dr:
+            if row["Vehicle Present"] == "True":
+                to_db = [(row['StreetMarker'], datetime.strptime(row['ArrivalTime'], '%m/%d/%Y %I:%M:%S %p').timestamp(),
+                          datetime.strptime(row['DepartureTime'], '%m/%d/%Y %I:%M:%S %p').timestamp())]
+                cur.executemany("INSERT INTO t (MarkerId, ArrivalTime, DepartureTime) VALUES (?, ?,?);", to_db)
     con.commit()
 else:
     print("Table table already exists!")
