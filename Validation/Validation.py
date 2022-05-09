@@ -7,18 +7,18 @@ import sqlite3
 import statistics as stat
 
 N = 20000
-con = sqlite3.connect("Data1.db")
+con = sqlite3.connect("Data2017.db")
 cur = con.cursor()
 
 cur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='t'")
 if cur.fetchone() is None:
     # Create Buoy ID table
-    cur.execute("CREATE TABLE t (BayId, ArrivalTime, DepartureTime, DurationMinutes);")
-    with open('data2019_filtered.csv', 'r') as fin:  # `with` statement available in 2.5+
+    cur.execute("CREATE TABLE t (MarkerId, ArrivalTime, DepartureTime, DurationMinutes);")
+    with open('On-street_Car_Parking_Sensor_Data_-_2017.csv', 'r') as fin:  # `with` statement available in 2.5+
         # csv.DictReader uses first line in file for column headings by default
         dr = csv.DictReader(fin)  # comma is default delimiter
-        to_db = [(i['BayId'], datetime.strptime(i['ArrivalTime'], '%m/%d/%Y %I:%M:%S %p').timestamp(), datetime.strptime(i['DepartureTime'], '%m/%d/%Y %I:%M:%S %p').timestamp(), i['DurationMinutes']) for i in dr]
-    cur.executemany("INSERT INTO t (BayId, ArrivalTime, DepartureTime, DurationMinutes) VALUES (?, ?,?,?);", to_db)
+        to_db = [(i['StreetMarker'], datetime.strptime(i['ArrivalTime'], '%m/%d/%Y %I:%M:%S %p').timestamp(), datetime.strptime(i['DepartureTime'], '%m/%d/%Y %I:%M:%S %p').timestamp()) for i in dr]
+    cur.executemany("INSERT INTO t (MarkerId, ArrivalTime, DepartureTime) VALUES (?, ?,?);", to_db)
     con.commit()
 else:
     print("Table table already exists!")
@@ -50,19 +50,22 @@ with open('monthly_table_combined_1.0.csv', newline="") as csvfile:
             usedBayIds.append(x)
     """
     for n in range(1, N+1):
-        index = random.randrange(0, len(headers))
-        markerID=headers[index][0]
-        bayId = headers[index][1]
+        flag = 1
+        while flag == 1 or (cur.fetchone() is None): #to make sure that the random markerID was in use in 2018
+            flag = 0
+            index = random.randrange(0, len(headers))
+            markerID = headers[index][0]
+            cur.execute("SELECT * FROM t WHERE MarkerId = ?", (str(markerID)))
         unixTime = random.randrange(1546261200, 1577797199) # random unix time for 2019
         Date = datetime.fromtimestamp(unixTime)
         dayNum = Date.weekday()
-        hour = Date.hour#
-        month = Date.month -1
+        hour = Date.hour
+        month = Date.month - 1
         minute = Date.minute
         seconds = Date.second
         timeOccupied = 0
-        print("markerID", markerID," bayid ", bayId, " month ",month, " day ", dayNum, " hour ", hour)
-        cur.execute("SELECT * FROM t WHERE BayId = ? AND ArrivalTime <? AND DepartureTime> ?", (str(bayId), unixTime, unixTime))
+        print("markerID", markerID, " bayid ", bayId, " month ", month, " day ", dayNum, " hour ", hour)
+        cur.execute("SELECT * FROM t WHERE MarkerId = ? AND ArrivalTime <? AND DepartureTime> ?", (str(markerID), unixTime, unixTime))
         #df= pd.read_sql_query("SELECT DurationMinutes from t where BayId = 5311 and ArrivalTime <= 1565043480 and DepartureTime>=1565043480" , con)
         if cur.fetchone() is None:
             carParked = 0
@@ -74,7 +77,7 @@ with open('monthly_table_combined_1.0.csv', newline="") as csvfile:
 
         startHour = unixTime - 60*minute - seconds
         endHour = startHour + 3600
-        cur.execute("SELECT * FROM t WHERE BayId = ? AND ((ArrivalTime <? AND DepartureTime>?) OR (ArrivalTime >? AND ArrivalTime<?) OR (DepartureTime >? AND DepartureTime<?))", (str(bayId), startHour, endHour, startHour, endHour, startHour, endHour))
+        cur.execute("SELECT * FROM t WHERE MarkerId = ? AND ((ArrivalTime <? AND DepartureTime>?) OR (ArrivalTime >? AND ArrivalTime<?) OR (DepartureTime >? AND DepartureTime<?))", (str(MarkerID), startHour, endHour, startHour, endHour, startHour, endHour))
         for c in cur.fetchall():
             if c[1] < startHour:
                 startTime = startHour
@@ -97,7 +100,7 @@ with open('monthly_table_combined_1.0.csv', newline="") as csvfile:
         """
     score = score / N
     print('Score', score)
-with open("Monthly-1.0.txt", "w") as f:
+with open("Monthly-1.0-2017.txt", "w") as f:
     for x in sample:
         for item in x:
             f.write("%s#n" % item)
