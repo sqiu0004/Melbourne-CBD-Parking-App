@@ -23,40 +23,55 @@ if cur.fetchone() is None:
 else:
     print("Table table already exists!")
 
-with open('weekly_table_2018-20.csv', newline="") as csvfile:
+with open('monthly_table_combined_1.0.csv', newline="") as csvfile:
     columns = defaultdict(list)
     reader = csv.DictReader(csvfile)
     usedBayIds = []
     score = 0
-    sample = []
+    sample = [[], [], [], [], [], [], [], [], [], [], [], []]
+
     for row in reader:
         for (k, v) in row.items():  # go over each column name and value
             columns[k].append(v)
-    for x in range(2, len(columns)-2): # making sure that we only test bayId's in which we have data for
+with open('monthly_table_combined_1.0.csv', newline="") as csvfile:
+    csv_reader = csv.reader(csvfile)
+    rows = list(csv_reader)
+    headers = []
+    for x in range(0, len(rows[0])):
+        if x > 2:
+            if rows[0][x] != '0':
+                headers.append([rows[0][x], x - 3])
+    """
+    for x in range(2, len(columns)): # making sure that we only test bayId's in which we have data for
         Sum = 0
         for y in columns[str(x)]:
             Sum += float(y)
         if Sum != 0:
             usedBayIds.append(x)
-    for n in range(1, N):
-        index = random.randrange(0, len(usedBayIds))
-        bayId = usedBayIds[index]
+    """
+    for n in range(1, N+1):
+        index = random.randrange(0, len(headers))
+        markerID=headers[index][0]
+        bayId = headers[index][1]
         unixTime = random.randrange(1546261200, 1577797199) # random unix time for 2019
         Date = datetime.fromtimestamp(unixTime)
         dayNum = Date.weekday()
-        hour = Date.hour
+        hour = Date.hour#
+        month = Date.month -1
         minute = Date.minute
         seconds = Date.second
         timeOccupied = 0
+        print("markerID", markerID," bayid ", bayId, " month ",month, " day ", dayNum, " hour ", hour)
         cur.execute("SELECT * FROM t WHERE BayId = ? AND ArrivalTime <? AND DepartureTime> ?", (str(bayId), unixTime, unixTime))
         #df= pd.read_sql_query("SELECT DurationMinutes from t where BayId = 5311 and ArrivalTime <= 1565043480 and DepartureTime>=1565043480" , con)
         if cur.fetchone() is None:
             carParked = 0
         else:
             carParked = 1
-        score += (float(columns[str(bayId)][24 * dayNum + hour]) / 100 - carParked) ** 2
+        score += (float(columns[str(markerID)][24 * dayNum + month*168 + hour]) / 100 - carParked) ** 2
         core=score/n
-        print('n:', n, 'bayId:', bayId, "predicted:", float(columns[str(bayId)][24*dayNum+hour])/100, "actual:", carParked, 'currentScore:',core)
+        print('n:', n, 'bayId:', bayId, "predicted:", float(columns[str(markerID)][24*dayNum+hour+ month*168])/100, "actual:", carParked, 'currentScore:',core)
+
         startHour = unixTime - 60*minute - seconds
         endHour = startHour + 3600
         cur.execute("SELECT * FROM t WHERE BayId = ? AND ((ArrivalTime <? AND DepartureTime>?) OR (ArrivalTime >? AND ArrivalTime<?) OR (DepartureTime >? AND DepartureTime<?))", (str(bayId), startHour, endHour, startHour, endHour, startHour, endHour))
@@ -70,14 +85,20 @@ with open('weekly_table_2018-20.csv', newline="") as csvfile:
             else:
                 endTime = c[2]
             timeOccupied += endTime - startTime
-        difference = float(columns[str(bayId)][24*dayNum+hour])/100 - timeOccupied/3600
-        sample.append(difference)
+        difference = float(columns[str(markerID)][24*dayNum+168*month+hour])/100 - timeOccupied/3600
+        #sample.append(difference)
+        sample[month].append(difference)
+        print("n:", n)
+        """
         if n>2:
             sampleMean = stat.mean(sample)
             sampleStd = stat.stdev(sample)
             print("mean", sampleMean, " sd", sampleStd)
+        """
     score = score / N
     print('Score', score)
-with open("sampledata.txt", "w") as f:
-    for item in sample: 
-        f.write("%s#n" % item)
+with open("Monthly-1.0.txt", "w") as f:
+    for x in sample:
+        for item in x:
+            f.write("%s#n" % item)
+        f.write("\n")
