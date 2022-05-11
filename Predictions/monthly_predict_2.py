@@ -4,13 +4,19 @@ import numpy as np
 
 
 # Initialise table
-id_list = range(0,10000)
+with open("D:/Desktop/Academia/TRC4200/results/id_table.csv", 'r') as id_file:
+    next(id_file)
+    id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
+    id_list = [row[1:] for row in id_reader]
+    id_list = id_list[0]
+# id_list = range(0,10000)
+params = ['Month', 'Day', 'Hour']  # parameters
 DiW = 7  # Days in week
 HiD = 24  # Hours in day
 MiY = 12  # Months in the year
 n_hours = DiW*HiD*MiY
 n_ids = len(id_list)
-weekly_table = np.zeros((n_hours,n_ids + 3))  # monthly column
+weekly_table = np.zeros((n_hours,n_ids + len(params)))  # monthly column
 weekly_table[:, 0] = np.repeat(np.arange(0,MiY)+1,DiW*HiD)  # monthly column
 weekly_table[:, 1] = np.tile(np.repeat(np.arange(0,DiW)+1,HiD),MiY)  # weekly column
 weekly_table[:, 2] = np.tile(np.arange(0,HiD),DiW*MiY) # hourly coloumn
@@ -23,16 +29,17 @@ def daterange(date1, date2):
 
 
 def Main():
-    header = [None for i in range(n_hours+3)]
-    header[:3] = ['Month', 'Day', 'Hour']
-    header[3:] = id_list
+    header = [None for i in range(n_hours+len(params))]
+    header[:len(params)] = params
+    header[len(params):] = id_list
 
     option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
     if option == "2":
-        table1 = input("table 1: ")
-        table2 = input("Table 2: ")
+        table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
+        table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20_MarkerId.csv
+        ratio = input("Ratio (0.0-1.0): ")
 
-        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("monthly_table_combined.csv", "w", newline='') as out_file:
+        with open(table1, 'r') as in_file1, open(table2, 'r') as in_file2, open("monthly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
@@ -46,16 +53,15 @@ def Main():
             in_file2 = list(reader2)
             data1 = np.array(in_file1).astype(float)
             data2 = np.array(in_file2).astype(float)
-            data_avg = np.zeros(data1.shape)
 
-            for i in range(data_avg.shape[0]):
-                for j in range(data_avg.shape[1]):
-                    if (data1[i,j] < 1.0) or (data2[i,j] < 1.0):
-                        data_avg[i,j] = data1[i,j]+data2[i,j]
+            for i in range(weekly_table.shape[0]):
+                for counter in range(len(params), weekly_table.shape[1]):
+                    if (data1[i, counter] < 1.0) or (data2[i, counter] < 1.0):
+                        weekly_table[i, counter] = data1[i, counter] + data2[i, counter]
                     else:
-                        data_avg[i,j] = (data1[i,j]+data2[i,j])/2
+                        weekly_table[i, counter] = data1[i, counter]*(1.0 - float(ratio)) + data2[i, counter]*float(ratio)
 
-            writer.writerows(data_avg)
+            writer.writerows(weekly_table)
 
     elif option == "1":
         data = input("Data file: ")
@@ -64,7 +70,7 @@ def Main():
         month = False
 
         while True:
-            monthly = input("Monthly prediction? (y/n):")
+            monthly = input("Choose specific month? (y/n):")
             if monthly == "y":
                 monthly = True
                 month = input("Enter month (1-12): ")
@@ -86,27 +92,31 @@ def Main():
             format = "%m/%d/%Y %I:%M:%S %p"
             earliest_date = None
             latest_date = None
-            j = 0
+            counter = 0
+            discarded = 0
 
             for row in reader:
                 # Row elements
                 id = row[0]
                 time_a = row[1]  # arrival time
                 time_d = row[2]  # departure time
-                m_span = row[3]  # time difference in minutes
+                m_span = row[len(params)]  # time difference in minutes
 
                 # Reformat the arrival and departure times in unix
                 unix_a = datetime.datetime.strptime(time_a, format)
                 unix_d = datetime.datetime.strptime(time_d, format)
 
+                if unix_a.month != unix_d.month:
+                    discarded += 1
+                    continue
                 if monthly:
                     if (int(unix_a.month) != int(month)) or (int(unix_d.month) != int(month)):
                         continue
 
                 # find earliest and latest dates
                 # arrival time is used to compare b/c some departure dates are outliers
-                j += 1
-                if j == 1:
+                counter += 1
+                if counter == 1:
                     earliest_date = unix_a
                     latest_date = unix_a
                 else:
@@ -121,22 +131,24 @@ def Main():
                 # convert the arrival time to table index (hours in a week)
                 DoW_a = unix_a.weekday()
                 MoY_a = unix_a.month - 1
-                hour_a = MoY_a*HiD*DiW + DoW_a*HiD + unix_a.hour
-                print(j, ":   bay(", id, ")   arr(", unix_a, ")   dep(", unix_d, ")   h_span(", h_span, ")")
+                HiW = HiD*DiW
+                print(counter, ":   bay(", id, ")   arr(", unix_a, ")   dep(", unix_d, ")   h_span(", h_span, ")    discarded(", discarded, ")")
 
                 # increment times of occupancy
                 if h_span == 1:  # if event *only occupies one hour* take the difference between departure and arrival minutes
-                    weekly_table[(hour_a) % n_hours, (int(id) + 3)] += round(unix_d.minute / 10) - round(unix_a.minute / 10)
+                    hour_a = MoY_a * HiD * DiW + ((DoW_a * HiD + unix_a.hour) % HiW)
+                    weekly_table[hour_a, (int(id) + len(params))] += round(unix_d.minute / 10) - round(unix_a.minute / 10)
                 else:
                     for hour in range(h_span):
+                        hour_a = MoY_a*HiD*DiW + ((DoW_a*HiD + unix_a.hour + hour) % HiW)
                         if hour == 0:  # if event is over one hour, take the time occupied in the first hour using the arrival time
-                            weekly_table[(hour_a) % n_hours, (int(id) + 3)] += 6 - round(unix_a.minute / 10)
+                            weekly_table[hour_a, (int(id) + len(params))] += 6 - round(unix_a.minute / 10)
                         elif hour == h_span - 1:  # if event is over one hour, take the time occupied in the last hour using the departure time
-                            weekly_table[(hour_a + hour) % n_hours, (int(id) + 3)] += round(unix_d.minute / 10)
+                            weekly_table[hour_a, (int(id) + len(params))] += round(unix_d.minute / 10)
                         else:  # if event is over one hour, assume all hours in between arrival and departure are occupied completely
-                            weekly_table[(hour_a + hour) % n_hours, (int(id) + 3)] += 6
+                            weekly_table[hour_a, (int(id) + len(params))] += 6
 
-            weekly_table[:,3:] = np.clip(weekly_table[:,3:]*100.0/(((365.25/12.0)/7.0)*6.0), 0.0, 100.0)  # calculate the percentage
+            weekly_table[:,len(params):] = np.clip(weekly_table[:,len(params):]*100.0/(((365.25/12.0)/7.0)*6.0), 0.0, 100.0)  # calculate the percentage
             writer.writerows(weekly_table)
 
 if __name__ == '__main__':

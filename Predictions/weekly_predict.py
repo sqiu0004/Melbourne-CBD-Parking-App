@@ -4,12 +4,18 @@ import numpy as np
 
 
 # Initialise table
-id_list = range(0,10000)
+with open("D:/Desktop/Academia/TRC4200/results/id_table.csv", 'r') as id_file:
+    next(id_file)
+    id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
+    id_list = [row[1:] for row in id_reader]
+    id_list = id_list[0]
+params = ['Day', 'Hour']  # parameters
 DiW = 7  # Days in week
 HiD = 24  # Hours in day
+MiY = 12  # Months in the year
 n_hours = DiW*HiD
 n_ids = len(id_list)
-weekly_table = np.zeros((n_hours,n_ids + 2))
+weekly_table = np.zeros((n_hours,n_ids + len(params)))  # monthly column
 weekly_table[:,0] = np.repeat(np.arange(0,DiW)+1,HiD)
 weekly_table[:,1] = np.tile(np.arange(0,HiD),DiW)
 
@@ -21,16 +27,19 @@ def daterange(date1, date2):
 
 
 def Main():
-    header = [None for i in range(n_hours+2)]
-    header[:2] = ['Day', 'Hour']
-    header[2:] = id_list
+    header = [None for i in range(n_hours+len(params))]
+    header[:len(params)] = params
+    header[len(params):] = id_list
 
     option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
     if option == "2":
-        table1 = input("table 1: ")
-        table2 = input("Table 2: ")
+        # table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
+        # table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20.csv
+        table1 = 'D:/Desktop/Academia/TRC4200/results/weekly_table_2018-19.csv'
+        table2 = 'D:/Desktop/Academia/TRC4200/results/weekly_table_2020.csv'
+        ratio = input("Ratio (0.0-1.0): ")
 
-        with open(table1 + '.csv', 'r') as in_file1, open(table2 + '.csv', 'r') as in_file2, open("weekly_table_combined.csv", "w", newline='') as out_file:
+        with open(table1, 'r') as in_file1, open(table2, 'r') as in_file2, open("weekly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
@@ -44,16 +53,15 @@ def Main():
             in_file2 = list(reader2)
             data1 = np.array(in_file1).astype(float)
             data2 = np.array(in_file2).astype(float)
-            data_avg = np.zeros(data1.shape)
 
-            for i in range(data_avg.shape[0]):
-                for j in range(data_avg.shape[1]):
-                    if (data1[i,j] < 1.0) or (data2[i,j] < 1.0):
-                        data_avg[i,j] = data1[i,j]+data2[i,j]
+            for i in range(weekly_table.shape[0]):
+                for counter in range(len(params), weekly_table.shape[1]):
+                    if (data1[i, counter] < 1.0) or (data2[i, counter] < 1.0):
+                        weekly_table[i, counter] = data1[i, counter] + data2[i, counter]
                     else:
-                        data_avg[i,j] = (data1[i,j]+data2[i,j])/2
+                        weekly_table[i, counter] = data1[i, counter]*(1.0 - float(ratio)) + data2[i, counter]*float(ratio)
 
-            writer.writerows(data_avg)
+            writer.writerows(weekly_table)
 
     elif option == "1":
         data = input("Data file: ")
