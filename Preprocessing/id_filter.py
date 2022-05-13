@@ -12,10 +12,10 @@ MarkerId = None
 def Main():
     # data = input("Data file name (no extension): ")
     files = [None]*3
-    files[0] = 'D:\Desktop\Academia\TRC4200\data20220429\BayId_MarkerId_2019'
-    files[1] = 'D:\Desktop\Academia\TRC4200\data20220429\BayId_MarkerId_2020'
-    files[2] = 'D:\Desktop\Academia\TRC4200\data20220429\BayId_MarkerId_2018'
-    with open('data_filtered' + '.csv', 'w', newline='') as out:
+    files[0] = 'D:/Desktop/Academia/TRC4200/results_20220429/BayId_MarkerId_2019'
+    files[1] = 'D:/Desktop/Academia/TRC4200/results_20220429/BayId_MarkerId_2020'
+    files[2] = 'D:/Desktop/Academia/TRC4200/results_20220429/BayId_MarkerId_2018'
+    with open('id_table' + '.csv', 'w', newline='') as out:
         writer = csv.writer(out)
         IdList[0][0] = 'BayId'
         IdList[1][0] = 'StreetMarker'
