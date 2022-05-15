@@ -1,31 +1,71 @@
 import csv
 
-def Main():
-    BayId = None
-    ArrivalTime = None
-    DepartureTime = None
-    StreetMarker = None
-    Largest_BayId = 0
-    data = input("Data csv name (no extension): ")
-    # D:\Desktop\Academia\TRC4200\data\data2018
 
-    with open(data + '.csv', 'r') as inp, open('data_filtered.csv', 'w', newline='') as out:
+BayId = None
+ArrivalTime = None
+DepartureTime = None
+StreetMarker = None
+VehiclePresent = None
+Largest_BayId = 0
+
+
+def id_list_init(path = "D:/Desktop/Academia/TRC4200/results/id_table.csv"):
+    """Converts list of marker ids to list"""
+    with open(path, 'r') as id_file:
+        next(id_file)
+        id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
+        markerId_list = [row[1:] for row in id_reader]
+        markerId_list = markerId_list[0]
+
+    return markerId_list
+
+
+def Main():
+    data = input("Data csv name (with extension): ")
+    # D:\Desktop\Academia\TRC4200\data\data2017.csv
+    markerId_list = id_list_init()
+
+    with open(data, 'r') as inp, open('data_filtered.csv', 'w', newline='') as out:
         fieldnames = ['BayId', 'ArrivalTime', 'DepartureTime', 'StreetMarker']
         writer = csv.DictWriter(out, fieldnames)
+        reader = csv.reader(inp)
 
         i = 0
         j = 0
-        for row in csv.reader(inp):
-            j = j + 1
-            if j == 1:
-                print(row)
+        k = 0
+
+        for row in reader:
+            print(row)
+            ArrivalTime = row.index('ArrivalTime')
+            DepartureTime = row.index('DepartureTime')
+            StreetMarker = row.index('StreetMarker')
+            VehiclePresent = row.index('Vehicle Present')
+
+            writer.writerow({'BayId': 'BayId',
+                             'ArrivalTime': 'ArrivalTime',
+                             'DepartureTime': 'DepartureTime',
+                             'StreetMarker': 'StreetMarker'})
+
+            try:
                 BayId = row.index('BayId')
-                ArrivalTime = row.index('ArrivalTime')
-                DepartureTime = row.index('DepartureTime')
-                StreetMarker = row.index('StreetMarker')
-            if (row[-1] != "false") and (row[-1] != "0"):
-                i = i + 1
-                print("i: ", i, "   j: ", j)
+            except:
+                BayId = -1
+
+            break
+
+
+        for row in reader:
+            j += 1
+            if (row[VehiclePresent].lower() != "false") and (row[VehiclePresent] != "0"):
+                if BayId == -1:
+                    try:
+                        row.append(markerId_list.index(row[StreetMarker]))
+                    except:
+                        k += 1
+                        continue
+
+                i += 1
+                print("i: ", i, "   j: ", j, "   k: ", k, "   Present: ", row[VehiclePresent])
 
                 writer.writerow({'BayId': row[BayId],
                                  'ArrivalTime': row[ArrivalTime],

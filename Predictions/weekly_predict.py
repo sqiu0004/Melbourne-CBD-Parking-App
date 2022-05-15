@@ -33,10 +33,8 @@ def Main():
 
     option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
     if option == "2":
-        # table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
-        # table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20.csv
-        table1 = 'D:/Desktop/Academia/TRC4200/results/weekly_table_2018-19.csv'
-        table2 = 'D:/Desktop/Academia/TRC4200/results/weekly_table_2020.csv'
+        table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
+        table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20.csv
         ratio = input("Ratio (0.0-1.0): ")
 
         with open(table1, 'r') as in_file1, open(table2, 'r') as in_file2, open("weekly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
@@ -81,7 +79,7 @@ def Main():
             else:
                 print("Answer must be (y/n)!")
 
-        with open(data + '.csv', 'r') as in_file, open("weekly_table.csv", "w", newline='') as out_file:
+        with open(data, 'r') as in_file, open("weekly_table.csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
