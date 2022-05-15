@@ -3,69 +3,84 @@ import datetime
 import numpy as np
 
 
-# Initialise table
-with open("D:/Desktop/Academia/TRC4200/results/id_table.csv", 'r') as id_file:
-    next(id_file)
-    id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
-    id_list = [row[1:] for row in id_reader]
-    id_list = id_list[0]
-# id_list = range(0,10000)
 params = ['Month', 'Day', 'Hour']  # parameters
 DiW = 7  # Days in week
 HiD = 24  # Hours in day
 MiY = 12  # Months in the year
-n_hours = DiW*HiD*MiY
-n_ids = len(id_list)
-weekly_table = np.zeros((n_hours,n_ids + len(params)))  # monthly column
-weekly_table[:, 0] = np.repeat(np.arange(0,MiY)+1,DiW*HiD)  # monthly column
-weekly_table[:, 1] = np.tile(np.repeat(np.arange(0,DiW)+1,HiD),MiY)  # weekly column
-weekly_table[:, 2] = np.tile(np.arange(0,HiD),DiW*MiY) # hourly coloumn
+n_hours = DiW * HiD * MiY
 
 
-# Outputs dates between two dates
 def daterange(date1, date2):
+    """Outputs dates between two dates"""
     for n in range(int((date2 - date1).days)+1):
         yield date1 + datetime.timedelta(n)
 
 
-def Main():
+def id_list_init(path = "D:/Desktop/Academia/TRC4200/results/id_table.csv"):
+    """Converts list of marker ids to list"""
+    with open(path, 'r') as id_file:
+        next(id_file)
+        id_reader = csv.reader(id_file, delimiter=',', quotechar="'")
+        markerId_list = [row[1:] for row in id_reader]
+        markerId_list = markerId_list[0]
+
+    return markerId_list
+
+
+def table_init(markerId_list):
+    """Instantiates probability table"""
+    n_ids = len(markerId_list)
+    weekly_table = np.zeros((n_hours, n_ids + len(params)))  # monthly column
+    weekly_table[:, 0] = np.repeat(np.arange(0, MiY) + 1, DiW * HiD)  # monthly column
+    weekly_table[:, 1] = np.tile(np.repeat(np.arange(0, DiW) + 1, HiD), MiY)  # weekly column
+    weekly_table[:, 2] = np.tile(np.arange(0, HiD), DiW * MiY)  # hourly coloumn
+
+    return weekly_table
+
+
+def header_init(markerId_list):
+    """Instantiates header of .csv file"""
     header = [None for i in range(n_hours+len(params))]
     header[:len(params)] = params
-    header[len(params):] = id_list
+    header[len(params):] = markerId_list
 
-    option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
-    if option == "2":
-        table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
-        table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20_MarkerId.csv
-        ratio = input("Ratio (0.0-1.0): ")
+    return header
 
-        with open(table1, 'r') as in_file1, open(table2, 'r') as in_file2, open("monthly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
-            # Writer header
-            writer = csv.writer(out_file)
-            writer.writerow(header)
 
-            next(in_file1)
-            next(in_file2)
-            reader1 = csv.reader(in_file1)
-            reader2 = csv.reader(in_file2)
+def merge_tables(header, weekly_table):
+    """Merges two tables together"""
+    table1 = input("table 1: ")  # D:\Desktop\Academia\TRC4200\results\baseline_table.csv
+    table2 = input("Table 2: ")  # D:\Desktop\Academia\TRC4200\results\monthly_table_2018-20_MarkerId.csv
+    ratio = input("Ratio (0.0-1.0): ")
 
-            in_file1 = list(reader1)
-            in_file2 = list(reader2)
-            data1 = np.array(in_file1).astype(float)
-            data2 = np.array(in_file2).astype(float)
+    with open(table1, 'r') as in_file1, open(table2, 'r') as in_file2, open("monthly_table_combined_" + ratio + ".csv", "w", newline='') as out_file:
+        # Writer header
+        writer = csv.writer(out_file)
+        writer.writerow(header)
 
-            for i in range(weekly_table.shape[0]):
-                for counter in range(len(params), weekly_table.shape[1]):
-                    if (data1[i, counter] < 1.0) or (data2[i, counter] < 1.0):
-                        weekly_table[i, counter] = data1[i, counter] + data2[i, counter]
-                    else:
-                        weekly_table[i, counter] = data1[i, counter]*(1.0 - float(ratio)) + data2[i, counter]*float(ratio)
+        next(in_file1)
+        next(in_file2)
+        reader1 = csv.reader(in_file1)
+        reader2 = csv.reader(in_file2)
 
-            writer.writerows(weekly_table)
+        in_file1 = list(reader1)
+        in_file2 = list(reader2)
+        data1 = np.array(in_file1).astype(float)
+        data2 = np.array(in_file2).astype(float)
 
-    elif option == "1":
+        for i in range(weekly_table.shape[0]):
+            for counter in range(len(params), weekly_table.shape[1]):
+                if (data1[i, counter] < 1.0) or (data2[i, counter] < 1.0):
+                    weekly_table[i, counter] = data1[i, counter] + data2[i, counter]
+                else:
+                    weekly_table[i, counter] = data1[i, counter]*(1.0 - float(ratio)) + data2[i, counter]*float(ratio)
+
+        writer.writerows(weekly_table)
+
+
+def tabulate_probabilities(header, weekly_table):
         data = input("Data file: ")
-        # e.g. "D:\Desktop\TRC4200\data2018-20_filtered\data2020_filtered"
+        # e.g. D:\Desktop\Academia\TRC4200\data_2016-20_filtered\data2017_filtered.csv
         monthly = False
         month = False
 
@@ -81,7 +96,7 @@ def Main():
             else:
                 print("Answer must be (y/n)!")
 
-        with open(data + '.csv', 'r') as in_file, open("monthly_table.csv", "w", newline='') as out_file:
+        with open(data, 'r') as in_file, open("monthly_table.csv", "w", newline='') as out_file:
             # Writer header
             writer = csv.writer(out_file)
             writer.writerow(header)
@@ -150,6 +165,22 @@ def Main():
 
             weekly_table[:,len(params):] = np.clip(weekly_table[:,len(params):]*100.0/(((365.25/12.0)/7.0)*6.0), 0.0, 100.0)  # calculate the percentage
             writer.writerows(weekly_table)
+
+
+def Main():
+    # Initialise marker id list
+    markerId_list = id_list_init("D:/Desktop/Academia/TRC4200/results/id_table.csv")
+    # Initialise probability table
+    weekly_table = table_init(markerId_list)
+    # Create header
+    header = header_init(markerId_list)
+
+    option = input("1. Tabulate probability \n2. Merge probability tables\n Choose option: ")
+    if option == "2":
+        merge_tables(header, weekly_table)
+
+    elif option == "1":
+        tabulate_probabilities(header, weekly_table)
 
 if __name__ == '__main__':
     Main()
