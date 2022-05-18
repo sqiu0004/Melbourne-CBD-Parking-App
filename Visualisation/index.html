@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.css" rel="stylesheet">
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.7.0/mapbox-gl.js"></script>
+<style>
+  #map {
+    position:absolute;
+    width:100%;
+    top:0px;
+    left:0px;
+    bottom:0;
+    z-index:1;
+}
+  .slidecontainer {
+  width: 100%;
+}
+.menu{
+  position: absolute;
+  z-index: 2;
+  background: white;
+  border-style: solid;
+  border-color: #787175;
+  width: 50%
+}
+#inputs{
+  position: relative;
+}
+.slider {
+  appearance: none;
+  position: relative;
+  width: 90%; /* Full-width */
+  height: 10px; /* Specified height */
+  background: #d3d3d3; /* Grey background */
+  outline: black; /* Remove outline */
+  opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+  -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+  transition: opacity .2s;
+  left: 0%;
+}
+.gradientContainer{
+  background:linear-gradient(to right, hsl(120,100%,50%) 0%,  hsl(180,100%,50%) 25%, hsl(240,100%,50%) 50%,  hsl(300,100%,50%) 75%,hsl(360,100%,50%) 100%);
+  width:100%;
+  height:10px;
+}
+.pressed{
+  background-color: #d6d3c9;
+}
+.dayPressed{
+  background-color: #d6d3c9;
+}
+.monthPressed{
+  background-color: #d6d3c9;
+}
+.box{
+  width: 100%;
+}
+.table {
+    display:table;
+    width:100%;
+}
+.tr {
+    display:table-row;
+}
+.textLeft {
+    display:table-cell;
+    width:25%;
+}
+.textCenter {
+    display:table-cell;
+    text-align:center;
+    width:50%;
+}
+.textright {
+    display:table-cell;
+    text-align:right;
+    width:25%;
+}
+#time{
+  position: relative;
+  right: 0px;
+}
+
+  </style>
+
+    <meta charset="utf-8">
+    <title>Melbourne Car parks</title>
+  </head>
+  <body>
+
+     <div class="menu">
+       <div class="buttons">
+         </div>
+         <div id="inputs">
+           <button id='buttonDay-0' class='dayPressed' onclick='updateDayButtons(0)'>Mon</button>
+           <button id='buttonDay-1' class='dayBut' onclick='updateDayButtons(1)'>Tues</button>
+           <button id='buttonDay-2' class='dayBut' onclick='updateDayButtons(2)'>Weds</button>
+           <button id='buttonDay-3' class='dayBut' onclick='updateDayButtons(3)'>Thur</button>
+           <button id='buttonDay-4' class='dayBut' onclick='updateDayButtons(4)'>Fri</button>
+           <button id='buttonDay-5' class='dayBut' onclick='updateDayButtons(5)'>Sat</button>
+           <button id='buttonDay-6' class='dayBut' onclick='updateDayButtons(6)'>Sun</button>
+           <div id="monthButtons">
+             <button id='buttonMonth-0' class='monthPressed' onclick='updateMonthButtons(0)'>Jan</button>
+             <button id='buttonMonth-1' class='monthBut' onclick='updateMonthButtons(1)'>Feb</button>
+             <button id='buttonMonth-2' class='monthBut' onclick='updateMonthButtons(2)'>March</button>
+             <button id='buttonMonth-3' class='monthBut' onclick='updateMonthButtons(3)'>April</button>
+             <button id='buttonMonth-4' class='monthBut' onclick='updateMonthButtons(4)'>May</button>
+             <button id='buttonMonth-5' class='monthBut' onclick='updateMonthButtons(5)'>June</button>
+             <button id='buttonMonth-6' class='monthBut' onclick='updateMonthButtons(6)'>July</button>
+             <button id='buttonMonth-7' class='monthBut' onclick='updateMonthButtons(7)'>Aug</button>
+             <button id='buttonMonth-8' class='monthBut' onclick='updateMonthButtons(8)'>Sept</button>
+             <button id='buttonMonth-9' class='monthBut' onclick='updateMonthButtons(9)'>Oct</button>
+             <button id='buttonMonth-10' class='monthBut' onclick='updateMonthButtons(10)'>Nov</button>
+             <button id='buttonMonth-11' class='monthBut' onclick='updateMonthButtons(11)'>Dec</button>
+          </div>
+              <div class='slidecontainer'>
+                <input type='range' min='0' max='23' value='2' class='slider' id='myRange' oninput='changeSlider(1)' onchange="changeSlider(0)"><span id='time'>2am</span>
+              </div>
+           </div>
+           <div class='box'>
+             <div class='gradientContainer'></div>
+             <div class="table">
+               <div class="tr">
+                 <div class="textLeft">0%</div>
+                 <div class="textCenter">Taken Probabilty</div>
+                 <div class="textright">100%</div>
+               </div>
+             </div>
+         </div>
+    </div>
+     <div id="map"></div>
+  </body>
+
+  <script>
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic3VuZGFnIiwiYSI6ImNsMHgzdWh5NTFuYjUzbG9wZTNiemVid3YifQ.DX_2jXr9gd7qiU5HVS9PdQ';
+  const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/dark-v10',
+  center: [144.95616013663155,-37.80885560879349],
+  zoom: 17
+  });
+
+  let bayid=[];
+  let currentCarParks=[];
+  let time=0;
+  let flag =1;
+  //changeSlider();
+  map.on('load', function(){
+    map.addSource('predictionUsingCurrent',{
+      'type':'geojson',
+      'data':'ec2-18-212-160-210.compute-1.amazonaws.com/test.geojson'
+    })
+    map.addSource('predictionUsingCurrent2',{
+      'type':'geojson',
+      'data':'ec2-18-212-160-210.compute-1.amazonaws.com/test2.geojson'
+    })
+    map.addLayer({
+      'id':'usingCurrent',
+      'type':'fill',
+      'source':'predictionUsingCurrent',
+      'paint': {'fill-color': ["to-color", ["concat",
+                          "hsl(", ["to-string",
+                              ["+", 120, ["*",2.4, ["at", 2, ["get", "prob"]]]]],
+                          ",100%, 50%)"]]}
+      });
+      map.addLayer({
+        'id':'usingCurrent2',
+        'type':'fill',
+        'source':'predictionUsingCurrent2',
+        'paint': {'fill-color': ["to-color", ["concat",
+                            "hsl(", ["to-string",
+                                ["+", 120, ["*",2.4, ["at", 2, ["get", "prob"]]]]],
+                            ",100%, 50%)"]]}
+        });
+  })
+
+
+  function changeSlider(number){//updates the slider value for using predicitons based on live data
+
+    timeToPredict=document.getElementById("myRange").value;
+    //timeToPredict=10*timeToPredict;
+    if(flag==1){
+        time=parseInt(timeToPredict)+document.getElementsByClassName("dayPressed")[0].id[10]*24+document.getElementsByClassName("monthPressed")[0].id[12]*168;
+    }
+    else{
+      time=parseInt(timeToPredict)+document.getElementsByClassName("dayPressed")[0].id[10]*24;
+    }
+    if(timeToPredict==0){
+      output="12am";
+    }
+    else if (timeToPredict==12) {
+      output="12pm"
+    }
+    else if (timeToPredict<12) {
+      output=timeToPredict+'am'
+    }
+    else{
+        output=timeToPredict%12+'pm'
+    }
+    document.getElementById("time").innerHTML=output;
+    if(number==0){updateLayer1('usingCurrent', time);}
+
+  }
+  
+  
+  function updateDayButtons(button){
+    if(document.getElementById("buttonDay-"+button).className=="dayBut"){
+      old = document.getElementsByClassName("dayPressed")[0].id[10];
+      document.getElementsByClassName("dayPressed")[0].className="dayBut";
+      document.getElementById("buttonDay-"+button).className="dayPressed";
+      if(flag==0){
+        time=button*24+parseInt(document.getElementById("myRange").value);
+      }
+      else{
+        time=document.getElementsByClassName("dayPressed")[0].id[10]*24+parseInt(document.getElementById("myRange").value)+document.getElementsByClassName("monthPressed")[0].id[12]*168;
+      }
+      updateLayer1('usingCurrent',time);
+    }
+  }
+  function updateMonthButtons(button){
+    if(document.getElementById("buttonMonth-"+button).className=="monthBut"){
+      old = document.getElementsByClassName("monthPressed")[0].id[12];
+      document.getElementsByClassName("monthPressed")[0].className="monthBut";
+      document.getElementById("buttonMonth-"+button).className="monthPressed";
+      if (flag == 1){
+        time=(button-old)*168+time;
+      }
+      updateLayer1('usingCurrent',time);
+    }
+  }
+  
+  function removeLayers(arr, unionArr){
+    for(var j=0;j<arr.length;j++){
+      if (unionArr.indexOf(arr[j])==-1){
+        map.removeLayer(arr[j].toString());
+        map.removeSource(arr[j]);
+      }
+    }
+  }
+  function dateChanged(){
+    for(var i=0;i<currentCarParks.length;i++){
+      updateLayer(currentCarParks[i]);
+    }
+  }
+  function updateLayer(layer){
+      map.setPaintProperty(layer, 'fill-color', getRandomColor());
+  }
+  function updateLayer1(layer,atTime){
+    map.setPaintProperty(layer, 'fill-color', ["to-color", ["concat",
+                        "hsl(", ["to-string",
+                            ["+", 120, ["*",2.4, ["at", time, ["get", "prob"]]]]],
+                        ",100%, 50%)"]]);
+    if(flag==1){
+      map.setPaintProperty('usingCurrent2', 'fill-color', ["to-color", ["concat",
+                          "hsl(", ["to-string",
+                              ["+", 120, ["*",2.4, ["at", time, ["get", "prob"]]]]],
+                          ",100%, 50%)"]]);
+    }
+  }
+
+  </script>
+</html>
